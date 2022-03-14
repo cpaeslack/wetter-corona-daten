@@ -1,0 +1,16 @@
+{
+  "general": {
+    "sampling_time": VALUE
+  },
+  }
+  "openweaterapi": {
+    "api_key": "YOUR API TOKEN"
+  },
+  "influxdb": {
+    "username": "John Doe",
+    "password": "mysupersecretpassword",
+    "host": "host address",
+    "dbname": "database",
+    "port": "1234"
+  }
+}
