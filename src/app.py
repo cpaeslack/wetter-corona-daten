@@ -41,7 +41,7 @@ def main():
 def fetch_and_store_data(config: dict):
     """ read out system data and store in database """
 
-    logging.info('Starting retrieval of system data.')
+    logging.info('Starting retrieval of data.')
     # date_now = datetime.datetime.now().strftime("%Y-%d-%m")
     # session = "Session_{}".format(date_now)
     session = "Session_2022-03-14"
