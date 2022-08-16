@@ -9,8 +9,6 @@ services:
     container_name: data-fetcher
     env_file:
       - .env
-    volumes:
-      - ${PWD}/data-fetcher:/src
   db-age-notifier:
     build:
       context: db-age-notifier/.

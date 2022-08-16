@@ -1,4 +1,4 @@
-FROM balenalib/aio-3288c-debian-python
+FROM arm32v7/python:slim-buster
 
 LABEL maintainer "Christopher Meister-Paeslack <christopher.paeslack@gmail.com>"
 
@@ -9,10 +9,10 @@ ENV PYTHONUNBUFFERED 1
 
 COPY requirements.txt /
 
-RUN apt-get update
-RUN apt-get install python3
+RUN apt-get update -y
+RUN apt-get install python3 -y
 RUN python3 -m pip install --upgrade pip
-RUN apt-get install gcc python3-dev
+RUN apt-get install gcc python3-dev -y
 RUN pip3 install -r /requirements.txt
 
 COPY ./ ./

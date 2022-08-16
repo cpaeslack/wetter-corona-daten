@@ -2,7 +2,7 @@
 set -e
 
 source .env
-app="wetter-corona-daten"
+app="data-fetcher"
 
 docker build -t ${app}:${VERSION} .
 docker run -d --rm \
