@@ -1,0 +1,4 @@
+influxdb
+python-dotenv
+requests
+slack_sdk
