@@ -1,0 +1,20 @@
+#!/bin/bash
+
+function help() {
+  echo "Build, deploy or restart the Docker network"
+  echo ""
+  echo "  How to use:"
+  echo "    ./deploy help:    shows this help"
+  echo "    ./deploy build:   rebuild containers"
+  echo "    ./deploy restart: restart containers"
+}
+
+if [[ ${1} == "help" ]] || [[ ${1} == "" ]]; then
+  help
+
+elif [[ $1 == "build" ]]; then
+  docker-compose -f docker-compose.yml build --no-cache
+elif [[ $1 == "restart" ]]; then
+  docker-compose -f docker-compose.yml down
+  docker-compose -f docker-compose.yml up --force-recreate -d
+fi

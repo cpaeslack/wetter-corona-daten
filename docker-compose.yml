@@ -1,0 +1,21 @@
+version: '1'
+
+services:
+  data-fetcher:
+    build:
+      context: data-fetcher/.
+      dockerfile: Dockerfile
+    restart: on-failure
+    container_name: data-fetcher
+    env_file:
+      - .env
+    volumes:
+      - ${PWD}/data-fetcher:/src
+  db-age-notifier:
+    build:
+      context: db-age-notifier/.
+      dockerfile: Dockerfile
+    restart: on-failure
+    container_name: db-age-notifier
+    env_file:
+      - .env
