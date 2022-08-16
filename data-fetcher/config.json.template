@@ -11,6 +11,7 @@
     "password": "mysupersecretpassword",
     "host": "host address",
     "dbname": "database",
-    "port": "1234"
+    "port": "1234",
+    "table": "xyz"
   }
 }
