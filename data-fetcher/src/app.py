@@ -44,7 +44,7 @@ def fetch_and_store_data(config: dict):
     logging.info('Starting retrieval of data.')
     # date_now = datetime.datetime.now().strftime("%Y-%d-%m")
     # session = "Session_{}".format(date_now)
-    session = "Session_2022-03-14"
+    session = "Session_2022-17-05"
     runNo = 1
     be_verbose = False
 
