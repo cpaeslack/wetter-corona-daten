@@ -32,7 +32,8 @@ def main():
             "mail_user": os.environ["MAIL_USER"],
             "mail_password": os.environ["MAIL_PASSWORD"],
             "mail_host": os.environ["MAIL_HOST"],
-            "mail_port": os.environ["MAIL_PORT"]
+            "mail_port": os.environ["MAIL_PORT"],
+            "mail_recipient": os.environ["MAIL_RECIPIENT"]
         }
     }
 
@@ -86,7 +87,7 @@ def send_mail(config, age):
 
     mail_user = config["mail_user"]
     mail_password = config["mail_password"]
-    recipient = "christopher.paeslack@gmail.com"
+    recipient = config["mail_recipient"]
     subject = "WARNING: Database Age Alert"
     body = f"Database was last updated {age} hours ago"
     msg = MIMEMultipart()
