@@ -1,8 +1,11 @@
 import datetime
 from dotenv import load_dotenv
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from influxdb import InfluxDBClient
 import logging
 import os
+import smtplib
 from threading import Thread
 import time
 
@@ -25,9 +28,11 @@ def main():
             "dbname": os.environ.get("DBNAME"),
             "port": os.environ.get("PORT")
         },
-        "slack": {
-            "token": os.environ["SLACK_API_TOKEN"],
-            "channel": os.environ.get("SLACK_CHANNEL")
+        "mail": {
+            "mail_user": os.environ["MAIL_USER"],
+            "mail_password": os.environ["MAIL_PASSWORD"],
+            "mail_host": os.environ["MAIL_HOST"],
+            "mail_port": os.environ["MAIL_PORT"]
         }
     }
 
@@ -76,7 +81,37 @@ def get_timestamp(database):
 
     return timestamp
 
+def send_mail(config, age):
+    """ sends and e-mail with warning about database age """
+
+    mail_user = config["mail_user"]
+    mail_password = config["mail_password"]
+    recipient = "christopher.paeslack@gmail.com"
+    subject = "WARNING: Database Age Alert"
+    body = f"Database was last updated {age} hours ago"
+    msg = MIMEMultipart()
+    msg['Subject'] = subject
+    msg['From'] = mail_user
+    msg['To'] = recipient
+    part = MIMEText(body, 'plain')
+    msg.attach(part)
+    logging.info(msg)
+
+    try:
+        server = smtplib.SMTP(config["mail_host"], config["mail_port"])
+        server.set_debuglevel(1)
+        server.starttls()
+        server.login(mail_user, mail_password)
+        server.sendmail(mail_user, recipient, msg.as_string())
+        server.close()
+        logging.info(f"Successfully sent email to {recipient}!")
+    except:
+        logging.error("ERROR: unable to send email")
+
 def message_poster(config: dict):
+    """ Gets the hours since last db update and posts
+        and sends an e-mail when database older than 1 hour.
+    """
 
     # Establish connection to influxdb
     database = Database(config['influxdb'])
@@ -87,22 +122,17 @@ def message_poster(config: dict):
 
     # get database age
     timestamp = get_timestamp(database)
-    timestamp_conv = datetime.datetime.strptime(timestamp[:-1], '%Y-%m-%dT%H:%M:%S.%f') + datetime.timedelta(hours=-5, minutes=00)
+    timestamp_conv = datetime.datetime.strptime(timestamp[:-1], '%Y-%m-%dT%H:%M:%S.%f')
+    #+ datetime.timedelta(hours=2, minutes=00)
     logging.info(f"Latest database timestamp: {timestamp_conv}")
 
     delta = date_now - timestamp_conv
     age_in_hours = round(delta.days * 24 + delta.seconds /3600)
     logging.info(f"Data base age: {age_in_hours}")
 
+    # send mail if database is too old
     if age_in_hours > 1:
-        message = f':warning: Database older than 1 hour! ({age_in_hours} hours) :warning:'
-        channel = config["slack"]["channel"]
-        logging.info(message)
-        try:
-            post_slack_message(token, message, channel)
-            logging.info(f"Sent message to Slack channel '{channel}'")
-        except RuntimeError:
-            logging.error("Error sending slack message!")
+        send_mail(config["mail"], age_in_hours)
 
 if __name__ == '__main__':
     main()
