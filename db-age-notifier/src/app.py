@@ -52,7 +52,7 @@ def main():
         except (KeyboardInterrupt, SystemExit):
             print('Application terminated by keyboard interrupt (ctrl-c).')
             sys.exit()
-        time.sleep(300)
+        time.sleep(1800)
 
 
 class Database:
