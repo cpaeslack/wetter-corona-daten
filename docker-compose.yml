@@ -17,3 +17,11 @@ services:
     container_name: db-age-notifier
     env_file:
       - .env
+  temp-notifier:
+    build:
+      context: temp-notifier/.
+      dockerfile: Dockerfile
+    restart: on-failure
+    container_name: temp-notifier
+    env_file:
+      - .env
