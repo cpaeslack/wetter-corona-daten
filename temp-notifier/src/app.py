@@ -5,12 +5,13 @@ from email.mime.text import MIMEText
 from influxdb import InfluxDBClient
 import logging
 import os
+from pathlib import Path
 import smtplib
 from threading import Thread
 import time
 
 def main():
-    """Main loop of the program, calls the subprocesses after 30 min if they are not running"""
+    """Main loop of the program, calls the subprocesses after 10 min if they are not running"""
 
     # Set format of log messages
     logging.basicConfig(
@@ -52,7 +53,7 @@ def main():
         except (KeyboardInterrupt, SystemExit):
             print('Application terminated by keyboard interrupt (ctrl-c).')
             sys.exit()
-        time.sleep(1800)
+        time.sleep(600)
 
 
 class Database:
@@ -125,9 +126,14 @@ def message_poster(config: dict):
     temperature = get_temperature(database)
     logging.info(f"Latest temperature measurement: {round(temperature,2)}")
 
-    # send mail if temperature has reached 24°C
-    if temperature > 24:
+    # send mail if temperature has reached 24°C (only once)
+    file = "high_temp"
+    file_exists = Path(file).is_file()
+    if temperature >= 24 and file_exists is False:
         send_mail(config["mail"], round(temperature,2))
+        Path("high_temp").touch()
+    if temperature < 24 and file_exists is True:
+        os.remove(file)
 
 if __name__ == '__main__':
     main()
