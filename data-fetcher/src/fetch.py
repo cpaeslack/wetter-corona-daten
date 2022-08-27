@@ -67,7 +67,7 @@ class Fetcher:
                 "tags": {"runNum": self.runNo},
                 "time": self.get_time_now(),
                 "fields": {
-                    "Inz7T": rki_daten['Inz7T'],
+                    "Inz7T": float(rki_daten['Inz7T']),
                     "AnzFallNeu": rki_daten['AnzFallNeu'],
                     "AnzTodesfall": rki_daten['AnzTodesfall'],
                     "wetter": wetter_daten['weather'][0]['description'],

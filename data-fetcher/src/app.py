@@ -1,5 +1,5 @@
 import logging
-from multiprocessing import Process
+from threading import Thread
 import time
 
 from config import get_config
@@ -28,14 +28,17 @@ def main():
     # Start processes for data retrieval from apis and writing to database
     while True:
         try:
-            if process is None or not process.is_alive():
-                process = Process(
-                    target=fetch_and_store_data, args=(config,))
-                process.start()
+            fetcher_thread = Thread(target=fetch_and_store_data, args=(config,))
+            logging.info("Child thread started: fetch_and_store_data")
+            fetcher_thread.start()
+            while fetcher_thread.is_alive():
+                fetcher_thread.join(sampling_period)
+                logging.info("Child thread stopped: fetch_and_store_data")
         except RuntimeError as error:
             logging.error(error)
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             print('Application terminated by keyboard interrupt (ctrl-c).')
+            sys.exit()
         time.sleep(sampling_period)
 
 def fetch_and_store_data(config: dict):

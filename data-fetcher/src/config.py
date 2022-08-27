@@ -1,14 +1,29 @@
-"""module to load the config from the config-file"""
-import json
+"""module to load the config"""
 import os
+from dotenv import load_dotenv
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 CONFIG_SAVE_PATH = '{}/../config.json'.format(pwd)
 
 
 def get_config() -> dict:
-    """reads the config from the config.json"""
 
-    with open(CONFIG_SAVE_PATH) as json_file:
-        config = json.load(json_file)
+    load_dotenv()
+    config = {
+        "general": {
+            "sampling_time": int(os.getenv("SAMPLING_TIME"))
+           },
+        "openweatherapi": {
+            "api_key": os.getenv("API_KEY")
+            },
+        "influxdb": {
+            "username": os.getenv("DB_USERNAME"),
+            "password": os.getenv("DB_PASSWORD"),
+            "host": os.getenv("DB_HOST"),
+            "dbname": os.getenv("DB_NAME"),
+            "port": os.getenv("DB_PORT"),
+            "table": os.getenv("DB_TABLE")
+            }
+        }
+
     return config
