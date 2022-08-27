@@ -23,11 +23,12 @@ def main():
     load_dotenv()
     config = {
         "influxdb": {
-            "username": os.environ.get("USERNAME"),
-            "password": os.environ.get("PASSWORD"),
-            "host": os.environ.get("HOST"),
-            "dbname": os.environ.get("DBNAME"),
-            "port": os.environ.get("PORT")
+            "username": os.environ.get("DB_USERNAME"),
+            "password": os.environ.get("DB_PASSWORD"),
+            "host": os.environ.get("DB_HOST"),
+            "dbname": os.environ.get("DB_NAME"),
+            "port": os.environ.get("DB_PORT"),
+            "table": os.environ.get("DB_TABLE")
         },
         "mail": {
             "mail_user": os.environ["MAIL_USER"],
@@ -67,10 +68,11 @@ class Database:
         self.password = credentials['password']
         self.database = credentials['dbname']
         self.port = credentials['port']
+        self.table = credentials['table']
         self.client = InfluxDBClient(self.host, self.port, self.user, self.password, self.database)
 
     def read_latest_datapoint(self):
-        latest = self.client.query('SELECT * FROM "Session_2022-17-05" ORDER BY DESC LIMIT 1;')
+        latest = self.client.query(f'SELECT * FROM "{self.table}" ORDER BY DESC LIMIT 1;')
 
         return latest
 
