@@ -1,6 +1,8 @@
 import datetime
 from dotenv import load_dotenv
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from email.mime.text import MIMEText
 from influxdb import InfluxDBClient
 import logging
@@ -92,7 +94,9 @@ def send_mail(config, temp):
     mail_password = config["mail_password"]
     recipient = config["mail_recipient"]
     subject = "INFO: High Temperature Notification"
-    body = f"The outside temperature has reached {temp}°C, please close the windows!"
+    body = f"""The outside temperature has reached {temp}°C, please close the windows!
+        \n
+    """
     msg = MIMEMultipart()
     msg['Subject'] = subject
     msg['From'] = mail_user
@@ -101,9 +105,19 @@ def send_mail(config, temp):
     msg.attach(part)
     logging.info(msg)
 
+    # read gif file and attach to mail
+    filename = "giphy.gif"
+    part2 = MIMEBase('application', "octet-stream")
+    with open(filename, 'rb') as file:
+        part2.set_payload(file.read())
+    encoders.encode_base64(part2)
+    part2.add_header('Content-Disposition',
+                    'attachment; filename={}'.format(Path(filename).name))
+    msg.attach(part2)
+
     try:
         server = smtplib.SMTP(config["mail_host"], config["mail_port"])
-        server.set_debuglevel(1)
+        # server.set_debuglevel(1)
         server.starttls()
         server.login(mail_user, mail_password)
         server.sendmail(mail_user, recipient, msg.as_string())
