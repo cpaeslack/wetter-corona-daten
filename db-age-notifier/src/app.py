@@ -1,10 +1,13 @@
 import datetime
 from dotenv import load_dotenv
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 from email.mime.text import MIMEText
 from influxdb import InfluxDBClient
 import logging
 import os
+from pathlib import Path
 import smtplib
 from threading import Thread
 import time
@@ -22,11 +25,13 @@ def main():
     load_dotenv()
     config = {
         "influxdb": {
-            "username": os.environ.get("USERNAME"),
-            "password": os.environ.get("PASSWORD"),
-            "host": os.environ.get("HOST"),
-            "dbname": os.environ.get("DBNAME"),
-            "port": os.environ.get("PORT")
+            "username": os.environ["DB_USERNAME"],
+            "password": os.environ["DB_PASSWORD"],
+            "host": os.environ["DB_HOST"],
+            "dbname": os.environ["DB_NAME"],
+            "port": os.environ["DB_PORT"],
+            "table_weather": os.environ["DB_TABLE_WEATHER"],
+            "table_rki": os.environ["DB_TABLE_RKI"]
         },
         "mail": {
             "mail_user": os.environ["MAIL_USER"],
@@ -66,10 +71,12 @@ class Database:
         self.password = credentials['password']
         self.database = credentials['dbname']
         self.port = credentials['port']
+        self.table_weather = credentials['table_weather']
+        self.table_rki = credentials['table_rki']
         self.client = InfluxDBClient(self.host, self.port, self.user, self.password, self.database)
 
     def read_latest_datapoint(self):
-        latest = self.client.query('SELECT * FROM "Session_2022-17-05" ORDER BY DESC LIMIT 1;')
+        latest = self.client.query(f'SELECT * FROM {self.table_weather} ORDER BY DESC LIMIT 1;')
 
         return latest
 
@@ -89,7 +96,9 @@ def send_mail(config, age):
     mail_password = config["mail_password"]
     recipient = config["mail_recipient"]
     subject = "WARNING: Database Age Alert"
-    body = f"Database was last updated {age} hours ago"
+    body = f"""Database was last updated {age} hours ago!
+        \n
+    """
     msg = MIMEMultipart()
     msg['Subject'] = subject
     msg['From'] = mail_user
@@ -98,9 +107,19 @@ def send_mail(config, age):
     msg.attach(part)
     logging.info(msg)
 
+    # read gif file and attach to mail
+    filename = "giphy.gif"
+    part2 = MIMEBase('application', "octet-stream")
+    with open(filename, 'rb') as file:
+        part2.set_payload(file.read())
+    encoders.encode_base64(part2)
+    part2.add_header('Content-Disposition',
+                    'attachment; filename={}'.format(Path(filename).name))
+    msg.attach(part2)
+
     try:
         server = smtplib.SMTP(config["mail_host"], config["mail_port"])
-        server.set_debuglevel(1)
+        # server.set_debuglevel(1)
         server.starttls()
         server.login(mail_user, mail_password)
         server.sendmail(mail_user, recipient, msg.as_string())
