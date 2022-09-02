@@ -2,3 +2,5 @@ config.json
 .env
 .idea
 src/__pycache__/
+test.py
+high_temp

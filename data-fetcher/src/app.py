@@ -1,3 +1,4 @@
+import datetime
 import logging
 from threading import Thread
 import time
@@ -45,17 +46,28 @@ def fetch_and_store_data(config: dict):
     """ read out system data and store in database """
 
     logging.info('Starting retrieval of data.')
-    # date_now = datetime.datetime.now().strftime("%Y-%d-%m")
-    # session = "Session_{}".format(date_now)
-    session = config['influxdb']['table']
+    date_today = datetime.datetime.now().strftime("%Y-%d-%m")
     runNo = 1
     be_verbose = False
 
     database = Database(config['influxdb'])
-    fetcher = Fetcher(runNo, session, config['openweatherapi'])
+    fetcher = Fetcher(runNo, config)
 
-    data = fetcher.prepare_datapoints()
-    database.save_to_database(data, be_verbose)
+    logging.info("Fetching weather data from openweathermap API")
+    data_weather = fetcher.prepare_datapoints_weather()
+    database.save_to_database(data_weather, be_verbose)
+
+    date_rki = fetcher.check_status_api()
+    if date_today != date_rki:
+        last_object_id_in_db = list(database.get_last_object_id())[0][0]['ObjectId']
+        data_rki = fetcher.prepare_datapoints_rki()
+        rki_object_id = data_rki[0]['fields']['ObjectId']
+        if rki_object_id != last_object_id_in_db:
+            logging.info(f"object_id: {rki_status['objectID']} not found in database")
+            logging.info("Fetching Corona data from RKI API")
+            database.save_to_database(data_rki, be_verbose)
+        else:
+            logging.info("Corona data is up to date!")
 
 if __name__ == '__main__':
     main()

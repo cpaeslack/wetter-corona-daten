@@ -13,8 +13,16 @@ class Database:
         self.password = credentials['password']
         self.database = credentials['dbname']
         self.port = credentials['port']
+        self.table_rki = credentials['table_rki']
+        self.table_weather = credentials['table_weather']
         self.client = InfluxDBClient(self.host, self.port, self.user, self.password, self.database)
 
+    def get_last_object_id(self):
+        """ TODO """
+
+        object_id = self.client.query(f"SELECT * FROM {self.table_rki} ORDER BY DESC LIMIT 1;")
+
+        return object_id
     def save_to_database(self, data: list, be_verbose: bool):
         """ Store the recorded data in the database """
 

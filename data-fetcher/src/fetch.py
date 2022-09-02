@@ -5,15 +5,36 @@ import requests
 class Fetcher:
     """ Class representing a data fetcher by making HTTP requests to various APIs """
 
-    def __init__(self, runNo: int, session: str, config: dict):
+    def __init__(self, runNo: int, config: dict):
         self.runNo = runNo
-        self.session = session
         self.config = config
 
     def get_time_now(self):
         timestamp = datetime.datetime.utcnow().isoformat()
 
         return timestamp
+
+    def check_status_api(self):
+        """ Get response from status api for date check"""
+
+        url = "https://services7.arcgis.com/mOBPykOjAyBO2ZKk/arcgis/rest/services/rki_service_status_v/FeatureServer/0/query?"
+        parameter = {
+            'referer': 'https://www.mywebapp.com',
+            'user-agent': 'python-requests/2.9.1',
+            'where': '1=1',
+            'outFields': '*',
+            'returnGeometry': False,
+            'f': 'json',
+            'cacheHint': True
+        }
+        response = requests.get(url=url, params=parameter)  # Anfrage absetzen
+        responsejson = json.loads(response.text)  # Das Ergebnis JSON als Python Dictionary laden
+
+
+        date_unix_time = responsejson['features'][-1]['attributes']['Datum']
+        date = datetime.datetime.fromtimestamp(int(date_unix_time / 1000)).strftime('%Y-%m-%d')
+
+        return date
 
     def get_inzidenz(self):
         """ Function to retrieve the 7-day incidence value from the RKI API """
@@ -40,7 +61,7 @@ class Fetcher:
         """ Function to retrieve weather data from the openweathermap API """
 
         url = "http://api.openweathermap.org/data/2.5/weather?"
-        api_key = self.config['api_key']
+        api_key = self.config['openweatherapi']['api_key']
         latitude = "51.474810"
         longitude = "7.120350"
 
@@ -55,27 +76,53 @@ class Fetcher:
 
         return result
 
-    def prepare_datapoints(self):
+    def prepare_datapoints_weather(self):
         """ Create Influxdb datapoints (using lineprotocol as of Influxdb >1.1) """
 
-        rki_daten = self.get_inzidenz()
         wetter_daten = self.get_weather()
 
         datapoints = [
             {
-                "measurement": self.session,
+                "measurement": self.config['influxdb']['table_weather'],
                 "tags": {"runNum": self.runNo},
                 "time": self.get_time_now(),
                 "fields": {
-                    "Inz7T": float(rki_daten['Inz7T']),
-                    "AnzFallNeu": rki_daten['AnzFallNeu'],
-                    "AnzTodesfall": rki_daten['AnzTodesfall'],
                     "wetter": wetter_daten['weather'][0]['description'],
                     "temperatur": wetter_daten['main']['temp'] - 273.15,
                     "luftdruck": wetter_daten['main']['pressure'],
                     "luftfeuchte": wetter_daten['main']['humidity'],
                     "sichtweite": wetter_daten['visibility'],
-                    "wind": wetter_daten['wind']['speed'],
+                    "wind": wetter_daten['wind']['speed']
+                }
+            }
+        ]
+
+        return datapoints
+
+    def prepare_datapoints_rki(self):
+        """ Create Influxdb datapoints (using lineprotocol as of Influxdb >1.1) """
+
+        rki_daten = self.get_inzidenz()
+
+        datapoints = [
+            {
+                "measurement": self.config['influxdb']['table_rki'],
+                "tags": {"runNum": self.runNo},
+                "time": self.get_time_now(),
+                "fields": {
+                    'AdmUnitId': rki_daten['AdmUnitId'],
+                    'BundeslandId': rki_daten['BundeslandId'],
+                    'AnzFall': rki_daten['AnzFall'],
+                    'AnzTodesfallNeu': rki_daten['AnzTodesfallNeu'],
+                    'AnzFall7T': rki_daten['AnzFall7T'],
+                    'AnzGenesen': rki_daten['AnzGenesen'],
+                    'AnzGenesenNeu': rki_daten['AnzGenesenNeu'],
+                    'AnzAktiv': rki_daten['AnzAktiv'],
+                    'AnzAktivNeu': rki_daten['AnzAktivNeu'],
+                    'ObjectId': rki_daten['ObjectId'],
+                    "Inz7T": float(rki_daten['Inz7T']),
+                    "AnzFallNeu": rki_daten['AnzFallNeu'],
+                    "AnzTodesfall": rki_daten['AnzTodesfall']
                 }
             }
         ]

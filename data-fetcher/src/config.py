@@ -22,7 +22,8 @@ def get_config() -> dict:
             "host": os.getenv("DB_HOST"),
             "dbname": os.getenv("DB_NAME"),
             "port": os.getenv("DB_PORT"),
-            "table": os.getenv("DB_TABLE")
+            "table_weather": os.getenv("DB_TABLE_WEATHER"),
+            "table_rki": os.getenv("DB_TABLE_RKI")
             }
         }
 
