@@ -30,7 +30,7 @@ def main():
             "host": os.environ.get("DB_HOST"),
             "dbname": os.environ.get("DB_NAME"),
             "port": os.environ.get("DB_PORT"),
-            "table": os.environ.get("DB_TABLE")
+            "table": os.environ.get("DB_TABLE_WEATHER")
         },
         "mail": {
             "mail_user": os.environ["MAIL_USER"],
