@@ -63,7 +63,7 @@ def fetch_and_store_data(config: dict):
         data_rki = fetcher.prepare_datapoints_rki()
         rki_object_id = data_rki[0]['fields']['ObjectId']
         if rki_object_id != last_object_id_in_db:
-            logging.info(f"object_id: {rki_status['objectID']} not found in database")
+            logging.info(f"object_id: {rki_object_id} not found in database")
             logging.info("Fetching Corona data from RKI API")
             database.save_to_database(data_rki, be_verbose)
         else:
