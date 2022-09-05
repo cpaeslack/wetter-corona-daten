@@ -47,6 +47,7 @@ def main():
     }
 
     # Start processes to get latest row from database and check data age
+    sampling_time = int(os.environ["SAMPLING_TIME"])
     while True:
         try:
             # Initialize the thread
@@ -61,7 +62,7 @@ def main():
         except (KeyboardInterrupt, SystemExit):
             print('Application terminated by keyboard interrupt (ctrl-c).')
             sys.exit()
-        time.sleep(600)
+        time.sleep(sampling_time)
 
 
 class Database:
@@ -118,7 +119,6 @@ def send_mail(config, temp, temp_case):
     msg['To'] = recipient
     part = MIMEText(body, 'plain')
     msg.attach(part)
-    logging.info(msg)
 
     # read gif file and attach to mail
     filename = f"gif_{temp_case}.gif"
@@ -131,12 +131,12 @@ def send_mail(config, temp, temp_case):
     msg.attach(part2)
 
     try:
-        server = smtplib.SMTP(config["mail_host"], config["mail_port"])
-        # server.set_debuglevel(1)
-        server.starttls()
-        server.login(mail_user, mail_password)
-        server.sendmail(mail_user, recipient, msg.as_string())
-        server.close()
+        # server = smtplib.SMTP(config["mail_host"], config["mail_port"])
+        # # server.set_debuglevel(1)
+        # server.starttls()
+        # server.login(mail_user, mail_password)
+        # server.sendmail(mail_user, recipient, msg.as_string())
+        # server.close()
         logging.info(f"Successfully sent email to {recipient}!")
     except:
         logging.error("ERROR: unable to send email")
@@ -161,24 +161,23 @@ def message_poster(config: dict):
     low_temp_threshold = int(config['thresholds']['low_temp_threshold'])
     high_temp_threshold = int(config['thresholds']['high_temp_threshold'])
 
-    # send mail only once when temperature has passes threshold (hot or cold)
-    if temperature >= high_temp_threshold:
-        temp_case = "high_temp"
-    elif temperature < low_temp_threshold:
-        temp_case = "low_temp"
-    file = temp_case
-    file_exists = Path(file).is_file()
+    logging.info(f"low_temp_threshold= {low_temp_threshold}")
+    logging.info(f"high_temp_threshold= {high_temp_threshold}")
 
-    if temperature >= high_temp_threshold and file_exists is False:
-        send_mail(config["mail"], round(temperature, 2), temp_case)
-        Path(temp_case).touch()
-    if temperature < high_temp_threshold and file_exists is True:
-        os.remove(file)
-    if temperature < low_temp_threshold and file_exists is False:
-        send_mail(config["mail"], round(temperature, 2), temp_case)
-        Path(temp_case).touch()
-    if temperature >= low_temp_threshold and file_exists is True:
-        os.remove(file)
+    # send mail only once when temperature has passes threshold (hot or cold)
+    file_exists_high = Path("high_temp").is_file()
+    file_exist_low = Path("low_temp").is_file()
+
+    if temperature >= high_temp_threshold and file_exists_high is False:
+        send_mail(config["mail"], round(temperature, 2), "high_temp")
+        Path("high_temp").touch()
+    if temperature < high_temp_threshold and file_exists_high is True:
+        os.remove("high_temp")
+    if temperature < low_temp_threshold and file_exist_low is False:
+        send_mail(config["mail"], round(temperature, 2), "low_temp")
+        Path("low_temp").touch()
+    if temperature >= low_temp_threshold and file_exist_low is True:
+        os.remove("low_temp")
 
 
 if __name__ == '__main__':
