@@ -6,3 +6,4 @@ test.py
 high_temp
 .DS_Store
 *.pyc
+.vscode

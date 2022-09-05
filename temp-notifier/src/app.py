@@ -12,6 +12,7 @@ import smtplib
 from threading import Thread
 import time
 
+
 def main():
     """Main loop of the program, calls the subprocesses after 10 min if they are not running"""
 
@@ -25,12 +26,12 @@ def main():
     load_dotenv()
     config = {
         "influxdb": {
-            "username": os.environ.get("DB_USERNAME"),
-            "password": os.environ.get("DB_PASSWORD"),
-            "host": os.environ.get("DB_HOST"),
-            "dbname": os.environ.get("DB_NAME"),
-            "port": os.environ.get("DB_PORT"),
-            "table": os.environ.get("DB_TABLE_WEATHER")
+            "username": os.environ["DB_USERNAME"],
+            "password": os.environ["DB_PASSWORD"],
+            "host": os.environ["DB_HOST"],
+            "dbname": os.environ["DB_NAME"],
+            "port": os.environ["DB_PORT"],
+            "table": os.environ["DB_TABLE_WEATHER"]
         },
         "mail": {
             "mail_user": os.environ["MAIL_USER"],
@@ -38,6 +39,10 @@ def main():
             "mail_host": os.environ["MAIL_HOST"],
             "mail_port": os.environ["MAIL_PORT"],
             "mail_recipient": os.environ["MAIL_RECIPIENT"]
+        },
+        "thresholds": {
+            "low_temp_threshold": os.environ["LOW_TEMP_THRESHOLD"],
+            "high_temp_threshold": os.environ["HIGH_TEMP_THRESHOLD"]
         }
     }
 
@@ -71,12 +76,15 @@ class Database:
         self.database = credentials['dbname']
         self.port = credentials['port']
         self.table = credentials['table']
-        self.client = InfluxDBClient(self.host, self.port, self.user, self.password, self.database)
+        self.client = InfluxDBClient(
+            self.host, self.port, self.user, self.password, self.database)
 
     def read_latest_datapoint(self):
-        latest = self.client.query(f'SELECT * FROM "{self.table}" ORDER BY DESC LIMIT 1;')
+        latest = self.client.query(
+            f'SELECT * FROM "{self.table}" ORDER BY DESC LIMIT 1;')
 
         return latest
+
 
 def get_temperature(database):
     """ get timestamp of latest entry in database """
@@ -87,16 +95,23 @@ def get_temperature(database):
 
     return temperature
 
-def send_mail(config, temp):
+
+def send_mail(config, temp, temp_case):
     """ sends and e-mail with warning about database age """
 
     mail_user = config["mail_user"]
     mail_password = config["mail_password"]
     recipient = config["mail_recipient"]
-    subject = "INFO: High Temperature Notification"
-    body = f"""The outside temperature has reached {temp}°C, please close the windows!
-        \n
-    """
+    if temp_case == "high_temp":
+        subject = "INFO: High Temperature Notification"
+        body = f"""The outside temperature has reached {temp}°C!
+            \n
+        """
+    elif temp_case == "low_temp":
+        subject = "INFO: Low Temperature Notification"
+        body = f"""The outside temperature has dropped below {temp}°C!
+            \n
+        """
     msg = MIMEMultipart()
     msg['Subject'] = subject
     msg['From'] = mail_user
@@ -106,13 +121,13 @@ def send_mail(config, temp):
     logging.info(msg)
 
     # read gif file and attach to mail
-    filename = "giphy.gif"
+    filename = f"gif_{temp_case}.gif"
     part2 = MIMEBase('application', "octet-stream")
     with open(filename, 'rb') as file:
         part2.set_payload(file.read())
     encoders.encode_base64(part2)
     part2.add_header('Content-Disposition',
-                    'attachment; filename={}'.format(Path(filename).name))
+                     'attachment; filename={}'.format(Path(filename).name))
     msg.attach(part2)
 
     try:
@@ -126,6 +141,7 @@ def send_mail(config, temp):
     except:
         logging.error("ERROR: unable to send email")
 
+
 def message_poster(config: dict):
     """ Gets the hours since last db update and posts
         and sends an e-mail when database older than 1 hour.
@@ -136,20 +152,34 @@ def message_poster(config: dict):
 
     # get current time
     date_now = datetime.datetime.now()
-    logging.info(f"Current time: {date_now}")
 
     # get temperature
     temperature = get_temperature(database)
     logging.info(f"Latest temperature measurement: {round(temperature,2)}")
 
-    # send mail if temperature has reached 24°C (only once)
-    file = "high_temp"
+    # get thresholds
+    low_temp_threshold = int(config['thresholds']['low_temp_threshold'])
+    high_temp_threshold = int(config['thresholds']['high_temp_threshold'])
+
+    # send mail only once when temperature has passes threshold (hot or cold)
+    if temperature >= high_temp_threshold:
+        temp_case = "high_temp"
+    elif temperature < low_temp_threshold:
+        temp_case = "low_temp"
+    file = temp_case
     file_exists = Path(file).is_file()
-    if temperature >= 24 and file_exists is False:
-        send_mail(config["mail"], round(temperature,2))
-        Path("high_temp").touch()
-    if temperature < 24 and file_exists is True:
+
+    if temperature >= high_temp_threshold and file_exists is False:
+        send_mail(config["mail"], round(temperature, 2), temp_case)
+        Path(temp_case).touch()
+    if temperature < high_temp_threshold and file_exists is True:
         os.remove(file)
+    if temperature < low_temp_threshold and file_exists is False:
+        send_mail(config["mail"], round(temperature, 2), temp_case)
+        Path(temp_case).touch()
+    if temperature >= low_temp_threshold and file_exists is True:
+        os.remove(file)
+
 
 if __name__ == '__main__':
     main()

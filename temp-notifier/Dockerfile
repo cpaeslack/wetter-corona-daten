@@ -16,6 +16,7 @@ RUN apt-get install gcc python3-dev -y
 RUN pip3 install -r /requirements.txt
 
 COPY ./ ./
-COPY ./src/giphy.gif ./
+COPY ./src/gif_high_temp.gif ./
+COPY ./src/gif_low_temp.gif ./
 
 CMD ["python3", "./src/app.py"]
