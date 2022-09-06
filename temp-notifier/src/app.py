@@ -131,12 +131,12 @@ def send_mail(config, temp, temp_case):
     msg.attach(part2)
 
     try:
-        # server = smtplib.SMTP(config["mail_host"], config["mail_port"])
-        # # server.set_debuglevel(1)
-        # server.starttls()
-        # server.login(mail_user, mail_password)
-        # server.sendmail(mail_user, recipient, msg.as_string())
-        # server.close()
+        server = smtplib.SMTP(config["mail_host"], config["mail_port"])
+        # server.set_debuglevel(1)
+        server.starttls()
+        server.login(mail_user, mail_password)
+        server.sendmail(mail_user, recipient, msg.as_string())
+        server.close()
         logging.info(f"Successfully sent email to {recipient}!")
     except:
         logging.error("ERROR: unable to send email")
