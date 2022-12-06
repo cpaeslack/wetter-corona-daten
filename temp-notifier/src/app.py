@@ -46,6 +46,9 @@ def main():
         }
     }
 
+    logging.info(f"low_temp_threshold= {config['thresholds']['low_temp_threshold']}")
+    logging.info(f"high_temp_threshold= {config['thresholds']['high_temp_threshold']}")
+
     # Start processes to get latest row from database and check data age
     sampling_time = int(os.environ["SAMPLING_TIME"])
     while True:
@@ -155,14 +158,11 @@ def message_poster(config: dict):
 
     # get temperature
     temperature = get_temperature(database)
-    logging.info(f"Latest temperature measurement: {round(temperature,2)}")
+    logging.info(f"Current temperature: {round(temperature,2)}°C")
 
     # get thresholds
     low_temp_threshold = int(config['thresholds']['low_temp_threshold'])
     high_temp_threshold = int(config['thresholds']['high_temp_threshold'])
-
-    logging.info(f"low_temp_threshold= {low_temp_threshold}")
-    logging.info(f"high_temp_threshold= {high_temp_threshold}")
 
     # send mail only once when temperature has passes threshold (hot or cold)
     file_exists_high = Path("high_temp").is_file()
