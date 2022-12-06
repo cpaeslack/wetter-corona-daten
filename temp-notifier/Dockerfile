@@ -1,4 +1,4 @@
-FROM arm32v7/python:slim-buster
+FROM arm32v7/python:3.11-slim-buster
 
 LABEL maintainer "Christopher Meister-Paeslack <christopher.paeslack@gmail.com>"
 
