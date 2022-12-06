@@ -148,7 +148,7 @@ def message_poster(config: dict):
 
     delta = date_now - timestamp_conv
     age_in_hours = round(delta.days * 24 + delta.seconds /3600)
-    logging.info(f"Data base age: {age_in_hours}")
+    logging.info(f"Data base age: {age_in_hours} hours")
 
     # send mail if database is too old
     if age_in_hours > 1:
