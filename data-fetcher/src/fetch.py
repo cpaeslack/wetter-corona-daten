@@ -68,7 +68,8 @@ class Fetcher:
         parameter = {
             'lat': f'{latitude}',
             'lon': f'{longitude}',
-            'appid': f'{api_key}'
+            'appid': f'{api_key}',
+            'lang': 'de'
         }
 
         response = requests.get(url=url, params=parameter)
